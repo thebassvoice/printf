@@ -1,48 +1,62 @@
 #include "main.h"
-#include <limits.h>
-#include <stdio.h>
 
+void print_buffer(char buffer[], int *buff_ind);
 /**
- * _printf - main
- * @format: Argument
- *
- * Return: Length of formatted output
+ * _printf - Printf function
+ * @format: pointer
+ * Return: chars.
  */
 int _printf(const char *format, ...)
 {
-	int (*pfunc)(va_list, flags_t *);
-	const char *p;
-	va_list arguments;
+	int e, print = 0, print_chars = 0;
+	int f, width, pre, size, buff_ind = 0;
+	va_list l;
+	char buffer[BUFF_SIZE];
 
-	register int count = 0;
-
-	flags_t flags = {0, 0, 0};
-
-	va_start(arguments, format);
-
-	if (!format || (format[0] == '%' && !format[1]))
+	if (format == NULL)
 		return (-1);
-	for (p = format; *p; p++)
+
+	va_start(l, format);
+
+	for (e = 0; format && format[e] != '\0'; e++)
 	{
-		if (*p == '%')
+		if (format[e] != '%')
 		{
-			p++;
-			if (*p == '%')
-			{
-				count += _putchar('%');
-				continue;
-			}
-			while (get_flag(*p, &flags))
-				p++;
-			pfunc = get_print(*p);
-			count += (pfunc)
-				? pfunc(arguments, &flags)
-				: _printf("%%%c", *p);
+			buffer[buff_ind++] = format[e];
+			if (buff_ind == BUFF_SIZE)
+				print_buffer(buffer, &buff_ind);
+			/* write(1, &format[i], 1);*/
+			print_chars++;
 		}
 		else
-			count += _putchar(*p);
+		{
+			print_buffer(buffer, &buff_ind);
+			f = get_flags(format, &e);
+			width = get_width(format, &e, l);
+			pre = get_pre(format, &e, l);
+			size = get_size(format, &e);
+			++e;
+			print = handle_print(format, &e, l, buffer,
+				f, width, pre, size);
+			if (print == -1)
+				return (-1);
+			print_chars += print;
+		}
 	}
-	_putchar(-1);
-	va_end(arguments);
-	return (count);
+	print_buffer(buffer, &buff_ind);
+	va_end(l);
+	return (print_chars);
+}
+
+/**
+ * print_buffer - Function
+ * @buffer: argument
+ * @buff_ind: pointer
+ */
+void print_buffer(char buffer[], int *buff_ind)
+{
+	if (*buff_ind > 0)
+		write(1, &buffer[0], *buff_ind);
+
+	*buff_ind = 0;
 }
